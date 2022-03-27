@@ -1,2 +1,2 @@
 # nzo-model
-The NZO model for (almost) 100% reneables in 2050
+The NZO model for (almost) 100% renewables in 2050
