@@ -5,9 +5,10 @@ To convert date/time to numerical value use:
     import time, datetime
     time_val = time.mktime(datetime.datetime.strptime(time_str, "%d/%m/%Y %H:%M").timetuple())
 """
+RAW_DATA_HOURLY_2018_HEADERS = \
+    ["Date & Time","TOTAL PRODUCTION","OROT RABIN","RUTENBERG","COAL","SOLAR","GAS","FUSILE","PERCENTAGE GAS","WIND"]
 
 RAW_DATA_HOURLY_2018 = [
-    ["Date & Time","TOTAL PRODUCTION","OROT RABIN","RUTENBERG","COAL","SOLAR","GAS","FUSILE","PERCENTAGE GAS","WIND"],
     ["1/1/2018 0:00",6856,1416,966,2382,0,4388,6771,0.64,13],
     ["1/1/2018 1:00",6180,1385,966,2351,0,3741,6092,0.61,15.8],
     ["1/1/2018 2:00",5743,1413,970,2383,0,3268,5651,0.57,16.5],
