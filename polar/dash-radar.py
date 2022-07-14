@@ -28,8 +28,8 @@ print("Running")
 
 # denamd and netDemand as lines - maybe use base
 
-def polar_scatter(day, name, color, fill=True):
-    r = [0] * 24 if day < 0 else df[name][(day * 24):(day+1)*24]
+def polar_scatter(day, name, color, fill=True, dash=False):
+    r = df[name][(day * 24):(day+1)*24]
     if not fill:  # if fill is false then add another point to close the loop
         r = list(r)
         r.append(r[0])
@@ -38,9 +38,11 @@ def polar_scatter(day, name, color, fill=True):
         r=r,
         theta=theta if fill else no_fill_theta,
         fillcolor=color,
-        fill='toself' if fill else "none",
+        fill="toself" if fill else "none",
         marker=dict(color=color),
-        line=dict(color=color, shape="spline", smoothing=0.2),
+        line=dict(color=color, shape="spline", smoothing=0.2, dash=("dash" if dash else "solid")),
+        hoveron="points",
+        hovertemplate = '<i>%{theta} : %{r:,.0f} KW</i>'
     )
 
 
@@ -54,8 +56,8 @@ def radar(day_of_year):
     f.add_trace(polar_scatter(day_of_year, "allgas", "silver"))
     f.add_trace(polar_scatter(day_of_year, "gas", "lightgray"))
     f.add_trace(polar_scatter(day_of_year, "coal", "black"))
-    f.add_trace(polar_scatter(-1, "", "white"))
     f.add_trace(polar_scatter(day_of_year, "demand", "red", False))
+    f.add_trace(polar_scatter(day_of_year, "netDemand", "purple", False, True))
 
     date = df['date'][day_of_year * 24]
     f.update_layout(
@@ -65,14 +67,15 @@ def radar(day_of_year):
             text=datetime.strptime(date, "%m/%d/%Y").strftime("%d %B, %Y")),
         height=800,
         polar=dict(
-            radialaxis=dict(visible=True, range=[-50000, max_tick], tickvals=tickvals, tickfont=dict(color="white")),
+            hole=0.4,
+            radialaxis=dict(visible=True, range=[0, max_tick], tickvals=tickvals, tickfont=dict(color="white"), tickangle=90),
             angularaxis=dict(
                 tickfont_size=12,
                 rotation=270,
                 direction="clockwise"
             )
         ),
-        showlegend=False,
+        showlegend=True,
     )
     return f
 
@@ -80,7 +83,7 @@ def radar(day_of_year):
 dash_app.layout = html.Div([
     html.H1('Daily generation and consumption', style={'textAlign': 'center'}),
     dcc.Slider(0, 364, step=1, marks=None, value=150, id="slider"),
-    dcc.Graph(id="daily-radar-plot"),
+    dcc.Graph(id="daily-radar-plot", config={'displayModeBar': False}),
 ])
 
 
