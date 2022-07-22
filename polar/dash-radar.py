@@ -7,7 +7,7 @@ import pandas as pd
 
 dash_app = Dash(__name__)
 
-theta = list(["{}:00".format(n) for n in range(24)])
+theta = ["{}:00".format(n) for n in range(24)]
 no_fill_theta = list(theta)
 no_fill_theta.append(theta[0])
 width = [1] * 24
@@ -23,6 +23,8 @@ df['discharge'] = df['curtailed'] + df['storageDischarge']
 max_tick = math.ceil(df['discharge'].max()/20000)*20000
 tickvals = [i*20000 for i in range(int(max_tick/20000))]
 
+df['onlysolar'] = df['solarUsage'] + df['curtailedEnergy'] + df['storageDischarge']
+df_by_date = df.groupby(['date']).sum()
 print("Running")
 
 
@@ -50,7 +52,7 @@ def polar_scatter(day, name, color, fill=True, dash=False):
         fillcolor=color,
         fill="toself" if fill else "none",
         marker=dict(color=color),
-        line=dict(color=color, shape="spline", smoothing=0.2, dash=("dash" if dash else "solid")),
+        line=dict(color=color, shape="spline", smoothing=0, dash=("dash" if dash else "solid")),
         hoveron="points",
         hovertemplate='<i>%{theta} : %{r:,.0f} KW</i>'
     )
@@ -113,9 +115,70 @@ def plot(day_of_year, bar):
     return f
 
 
+def marks(year):
+    result = {}
+    for month in range(1, 13):
+        timestamp = pd.Timestamp(year, month, 1)
+        day = timestamp.dayofyear
+        result[day] = "|"
+        result[day + 15] = timestamp.month_name()
+    result[pd.Timestamp(year, 12, 31).dayofyear - 1] = "|"
+    return result
+
+
+def yearly():
+    f = go.Figure(
+        data=[go.Scatter(y=df_by_date['demand'], marker_color="red"),
+              go.Scatter(y=df_by_date['onlysolar'], marker_color="gold")],
+    )
+    f.update_layout(
+        showlegend=False,
+        height=40,
+        xaxis={'fixedrange': True, 'visible': False},
+        yaxis={'fixedrange': True, 'visible': False},
+        margin=dict(l=25, r=25, t=0, b=0),
+        plot_bgcolor="white"
+    )
+    return f
+
+
+def heatmap(name, pallette):
+    f = go.Figure(
+        go.Heatmap(z=[df_by_date[name]], showscale=False, colorscale=pallette)
+    )
+    f.update_layout(
+        showlegend=False,
+        height=30,
+        xaxis={'fixedrange': True, 'visible': False},
+        yaxis={'fixedrange': True, 'visible': False},
+        margin=dict(l=28, r=25, t=0, b=0),
+    )
+    return f
+
+
 dash_app.layout = html.Div([
     html.H1('Daily generation and consumption', style={'textAlign': 'center'}),
-    dcc.Slider(0, 364, step=1, marks=None, value=150, id="slider"),
+    html.Div(
+        style={'position': 'relative'},
+        # style={'backgroundColor':'white'},
+        children=[
+            html.Div(children=[
+                dcc.Graph(figure=heatmap('demand', [[0, 'white'], [1, 'red']]), config={'displayModeBar': False}),
+                dcc.Graph(figure=heatmap('onlysolar', [[0, 'white'], [0.8, 'gold'], [1, 'orange']]), config={'displayModeBar': False}),
+            ]),
+            html.Div(
+                style={'position': 'absolute', 'top': 23, 'width': '100%'},
+                children=[
+                    dcc.Slider(min=0,
+                               max=pd.Timestamp(2050, 12, 31).dayofyear - 1,
+                               step=1,
+                               value=pd.Timestamp(2050, 6, 1).dayofyear - 1,
+                               marks=marks(2050),
+                               id="slider",
+                               ),
+                ]),
+        ],
+    ),
     dcc.Checklist(["Bar or Scatter"], id="bar-or-scatter"),
     dcc.Graph(id="daily-radar-plot", config={'displayModeBar': False}),
 ])
