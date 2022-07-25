@@ -163,8 +163,9 @@ dash_app.layout = html.Div([
         # style={'backgroundColor':'white'},
         children=[
             html.Div(children=[
-                dcc.Graph(figure=heatmap('demand', [[0, 'white'], [1, 'red']]), config={'displayModeBar': False}),
-                dcc.Graph(figure=heatmap('onlysolar', [[0, 'white'], [0.8, 'gold'], [1, 'orange']]), config={'displayModeBar': False}),
+                dcc.Graph(figure=heatmap('wind', [[0, 'white'], [1, 'red']]), config={'displayModeBar': False}),
+                dcc.Graph(figure=heatmap('onlysolar', [[0, 'white'], [0.8, 'gold'], [1, 'orange']]),
+                          config={'displayModeBar': False}),
             ]),
             html.Div(
                 style={'position': 'absolute', 'top': 23, 'width': '100%'},
