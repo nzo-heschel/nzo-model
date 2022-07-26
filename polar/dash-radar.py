@@ -113,22 +113,6 @@ def marks(year):
     return result
 
 
-def yearly():
-    f = go.Figure(
-        data=[go.Scatter(y=df_by_date['demand'], marker_color="red"),
-              go.Scatter(y=df_by_date['onlysolar'], marker_color="gold")],
-    )
-    f.update_layout(
-        showlegend=False,
-        height=40,
-        xaxis={'fixedrange': True, 'visible': False},
-        yaxis={'fixedrange': True, 'visible': False},
-        margin=dict(l=25, r=25, t=0, b=0),
-        plot_bgcolor="white"
-    )
-    return f
-
-
 def heatmap(name, pallette):
     f = go.Figure(
         go.Heatmap(z=[df_by_date[name]], showscale=False, colorscale=pallette)
@@ -149,7 +133,7 @@ dash_app.layout = html.Div([
         style={'position': 'relative'},
         children=[
             html.Div(children=[
-                dcc.Graph(figure=heatmap('wind', [[0, 'white'], [1, 'red']]), config={'displayModeBar': False}),
+                dcc.Graph(figure=heatmap('demand', "reds"), config={'displayModeBar': False}),
                 dcc.Graph(figure=heatmap('onlysolar', [[0, 'white'], [0.8, 'gold'], [1, 'orange']]),
                           config={'displayModeBar': False}),
             ]),
