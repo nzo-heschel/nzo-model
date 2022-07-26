@@ -7,20 +7,18 @@ import pandas as pd
 
 dash_app = Dash(__name__)
 
+BR = "<br>"
+ONLY_SOLAR = 'onlysolar'
+
+
 theta = ["{}:00".format(n) for n in range(24)]
 no_fill_theta = list(theta)
 no_fill_theta.append(theta[0])
 width = [1] * 24
 df = pd.read_csv('hourly-predicted.csv')
-df['coal'] = df['coalGen']
-df['gas'] = df['coal'] + df['gasGen']
-df['allgas'] = df['gas'] + df['storageGasCharge']
-df['wind'] = df['allgas'] + df['windGen']
-df['solar'] = df['wind'] + df['solarUsage']
-df['allsolar'] = df['solar'] + df['storageSolarCharge']
-df['curtailed'] = df['allsolar'] + df['curtailedEnergy']
-df['discharge'] = df['curtailed'] + df['storageDischarge']
-df['onlysolar'] = df['solarUsage'] + df['curtailedEnergy'] + df['storageDischarge']
+df[ONLY_SOLAR] = df['solarUsage'] + df['curtailedEnergy'] + df['storageDischarge']
+df['discharge'] = df['coalGen'] + df['gasGen'] + df['storageGasCharge'] + df['windGen'] + df['solarUsage'] \
+                  + df['storageSolarCharge'] + df['curtailedEnergy'] + df['storageDischarge']
 
 TICK_STEP = 20000
 max_tick = math.ceil(df['discharge'].max()/TICK_STEP)*TICK_STEP
@@ -60,6 +58,19 @@ def polar_scatter(day, name, color, fill=True, dash=False):
     )
 
 
+def date_str(day_of_year):
+    return datetime.strptime(df['date'][day_of_year * 24], "%m/%d/%Y").strftime("%-d %B, %Y")
+
+
+def annotation(day_of_year):
+    return "<span style='font-weight:bolder;color:black;font-size: 20px'>" + date_str(day_of_year) + "</span>" \
+           + BR + BR \
+           + "<span style='color:red';font-size: 16px>Total Demand: {:.2f} KWh"\
+                    .format(df_by_date['demand'][day_of_year]/1000) + '</span>' + BR \
+           + "<span style='color:orange;font-size: 16px'>Solar Power: {:.2f} KWh" \
+                    .format(df_by_date[ONLY_SOLAR][day_of_year]/1000) + '</span>' + BR
+
+
 def barplot(day_of_year):
     f = go.Figure()
     f.add_trace(polar_bar(day_of_year, "coalGen", "black"))
@@ -72,17 +83,14 @@ def barplot(day_of_year):
     f.add_trace(polar_bar(day_of_year, "storageDischarge", "lightblue"))
     f.add_trace(polar_scatter(day_of_year, "demand", "red", False))
     f.add_trace(polar_scatter(day_of_year, "netDemand", "purple", False, True))
+    f.add_annotation(xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False, text=annotation(day_of_year),
+                     font=dict(family="Arial", size=16, color="black"))
     return f
 
 
 def plot(day_of_year):
     f = barplot(day_of_year)
-    date = df['date'][day_of_year * 24]
     f.update_layout(
-        title=go.layout.Title(
-            x=0.45,
-            xanchor='center',
-            text=datetime.strptime(date, "%m/%d/%Y").strftime("%d %B, %Y")),
         height=800,
         polar=dict(
             hole=0.4,
@@ -134,7 +142,7 @@ dash_app.layout = html.Div([
         children=[
             html.Div(children=[
                 dcc.Graph(figure=heatmap('demand', "reds"), config={'displayModeBar': False}),
-                dcc.Graph(figure=heatmap('onlysolar', [[0, 'white'], [0.8, 'gold'], [1, 'orange']]),
+                dcc.Graph(figure=heatmap(ONLY_SOLAR, [[0, 'white'], [0.8, 'gold'], [1, 'orange']]),
                           config={'displayModeBar': False}),
             ]),
             html.Div(
@@ -163,8 +171,8 @@ dash_app.layout = html.Div([
                 verticalHeight=600)],
             style={'width': '7%', 'display': 'inline-block'}
         ),
-        html.Div(children=[
-                dcc.Graph(id="daily-radar-plot", config={'displayModeBar': False})],
+        html.Div(
+            dcc.Graph(id="daily-radar-plot", config={'displayModeBar': False}),
             style={'width': '90%', 'display': 'inline-block', 'vertical-align': 'top'}
         )
     ])
